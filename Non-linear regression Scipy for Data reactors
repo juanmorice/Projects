@@ -1,0 +1,65 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy as sp
+
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score 
+
+#Extracción de datos:
+
+data = pd.read_excel('Datos RNL.xlsx')
+
+data.columns = ['P_CO', 'P_H2', 'C_CH4', 'rate_reaction']
+
+rate_reaction_exp = data['rate_reaction']
+
+P_CO = data['P_CO']
+
+P_H2 = data['P_H2']
+
+
+
+#Función que se desea ajustar por medio de la regresión no lineal:
+
+def rate_reaction (S, beta_1, beta_2, a, b):
+
+  P_H2, P_CO = S  #S es una función que contiene las dos variables independientes que nos interesan
+
+  return (a * P_CO * (P_H2**(beta_1))) / (1+b*(P_H2**(beta_2)))
+
+
+#Valores iniciales supuestos:
+
+in_guess = [1,1,1,1]
+
+
+#Aplicación de la regresión no lineal por medio de curve fit, se ingresa el nombre de la función definida arriba y los sets de datos:
+
+parameters = curve_fit(rate_reaction, (P_H2, P_CO), rate_reaction_exp, in_guess)
+#Para curve fit se ingresa: nombre función, vector con variables indp, vector variable depend, valores guess
+#En parameters se guardan los 4 parámetros del modelo, beta_1, beta_2, a y b, en el primer array; los demás valores no se utilizan.
+#El primer valor hace referencia a que solo tomamos el primer vector, y el segundo valor es la posición (imprimir la variable parameters para más clarid
+
+beta_1_fit = parameters[0][0]
+beta_2_fit = parameters[0][1]
+a_fit = parameters[0][2]
+b_fit = parameters[0][3]
+
+#Ahora se calculan los valores de  rate_reaction pero usando el modelo de la función rate_reaction:
+
+rate_reaction_fit = rate_reaction((P_H2, P_CO), beta_1_fit, beta_2_fit, a_fit, b_fit)
+
+r2_squared = r2_score(rate_reaction_fit, rate_reaction_exp) #el primer parámetro son las concentraciones calculadas con el ajuste, y el segundo las concentraciones
+#experimentales
+
+
+#Cuadro en el gráfico con los datos obtenidos:
+
+print('Los valores de los parámetros ajustados por medio de la regresión no lineal son:')
+print('beta_1 = ', round(beta_1_fit,4))
+print('beta_2 = ', round(beta_2_fit,4))
+print('a = ', round(a_fit,4))
+print('b = ', round(b_fit,4))
+print('R^2 = ', round(r2_squared,4))
+
