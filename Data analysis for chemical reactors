@@ -1,0 +1,154 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy as sp
+
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score 
+
+#Datos experimentales:
+
+time = np.array([0, 50, 100, 150, 200, 250, 300])
+concentration = np.array([50, 38, 30.6, 25.6, 22.2, 19.5, 17.4])
+
+
+#la grafica se debe hacer siempre entre vectores del mismo tamaño 
+
+
+
+# 1) AJUSTE LINEAL DE DATOS CA VS t :
+
+def lineal (x, m, b):
+
+  return m * x + b   #definiendo la ecuación de la recta, mx + b, a es pendiente y b intercepto *
+
+
+parameters = curve_fit(lineal, time, concentration) #para encontrar los parámetros de la función, m y b
+
+m = parameters[0][0]  #extraer el valor de m del vector parameters
+
+b = parameters [0][1]  #extraer el valor de b del vector parameters
+
+
+concentration_fit = lineal(time, m, b) #datos de concentración calculados con la funcion lineal
+
+
+#Graficas
+
+plt.plot(time, concentration_fit, label = 'Ajuste lineal') #Grafica del ajuste lineal, time vs concentracion_fit
+
+plt.scatter(time, concentration, c='r', label = 'Exp data') #Dispersión de datos exp
+plt.xlabel('Tiempo (min)')
+plt.ylabel('Concentración (mol/dm3), x$10^3$')
+plt.legend()
+
+#Cuadro en el gráfico con los datos obtenidos:
+plt.text(245,40, 'm =' + str(round(m,3)))
+plt.text(245,38, 'b =' + str(round(b,3)))
+plt.text(245,36, r'$R^2$ =' + str(round(r2_squared,3)))
+plt.text(25, 15, 'Model = ' + '\n' + r'$Ca = m * t + b$')
+
+# Cálculo de R2
+
+r2_squared = r2_score(concentration_fit, concentration) #el primer parámetro son las concentraciones calculadas con el ajuste, y el segundo las concentraciones
+#experimentales
+
+#Entonces el ajuste lineal no nos funciona para calcular las derivadas.
+
+
+# 2) AJUSTE GRADO 4 DE LOS DATOS CA VS t:
+
+
+#Ajustes polinomial en Python:
+
+#Ajuste grado 3:  a*x3 + b*x2 + c*x + d
+
+def curve (x, a, b, c, d, e):
+
+  return a * (x**4) + b * (x**3) + c * (x**2) + d* x + e 
+
+
+parameters = np.polyfit (time, concentration, 4) 
+#en np.polyfit le damos los datos de time, concetration, y el grado del polinomio que deseo ajustar
+
+a_fit = parameters [0]
+b_fit = parameters [1]
+c_fit = parameters [2]
+d_fit = parameters [3]
+e_fit = parameters [4]
+
+concentration_fit = curve(time, a_fit, b_fit, c_fit, d_fit, e_fit)
+
+# Cálculo de R2
+
+r2_squared = r2_score(concentration_fit, concentration) #el primer parámetro son las concentraciones calculadas con el ajuste, y el segundo las concentraciones
+#experimentales
+
+print('Entonces el R2 del ajuste es' , r2_squared) 
+
+print('Entonces la ecuación del ajuste es:' , 'Ca = ' , a_fit , '* t4 ' , b_fit, '* t3 ' , c_fit,  '* t2 ', d_fit, '* t ', e_fit   )
+
+
+#Gráficas:
+
+plt.plot(time, concentration_fit, label = 'Ajuste grado 3') #Grafica del ajuste lineal, time vs concentracion_fit
+
+plt.scatter(time, concentration, c = 'r', label = 'Exp data')
+plt.xlabel('Tiempo (min)')
+plt.ylabel('Concentración (mol/dm3), x$10^3$')
+plt.legend()
+
+#Cuadro en el gráfico con los datos obtenidos:
+plt.text(245,40, 'a =' + str(round(a_fit,3)))
+plt.text(245,38, 'b =' + str(round(b_fit,3)))
+plt.text(245,36, 'c =' + str(round(c_fit,3)))
+plt.text(245,34, 'd =' + str(round(d_fit,3)))
+plt.text(245,32, 'e =' + str(round(e_fit,3)))
+plt.text(245,30, r'$R^2$ =' + str(round(r2_squared,3)))
+plt.text(15, 18, 'Model = ' + '\n' + r'$Ca = a*t^4 + b*t^3 + c*t^2 + d*t + e$')
+
+#3) CÀLCULO DE LOS VALORES DE -DCA/Dt
+
+
+#Calcular las derivadas dCa/dt:   Ca = at4 + bt3 + ct2 + dt + e;
+
+# Al derivar el polinomio grado 3:    (4at3 + 3bt2 + 2ct + d)
+
+Derivadas = -(4*a_fit*(time**3) + 3*b_fit* (time **2) + 2* c_fit * time + d_fit)
+
+
+ln_derivadas = np.log(Derivadas) 
+
+ln_ca = np.log(concentration)
+
+
+#Regresión lineal 
+
+parameters = curve_fit(lineal, ln_ca, ln_derivadas) #para encontrar los parámetros de la función, m y b
+
+m = parameters[0][0]  #extraer el valor de m del vector parameters
+b = parameters [0][1]  #extraer el valor de b del vector parameters
+
+ln_derivadas_fit = lineal(ln_ca, m, b) #datos de concentración calculados con la funcion lineal
+
+r2_squared = r2_score(ln_derivadas_fit, ln_derivadas) #el primer parámetro son las concentraciones calculadas con el ajuste, y el segundo las concentraciones
+#experimentales
+
+#Gráficas
+
+plt.scatter(ln_ca, ln_derivadas, c= 'r', label = 'Exp data')
+plt.xlabel('ln(Ca)')
+plt.ylabel('ln(-dCa/dt)')
+
+plt.plot(ln_ca, ln_derivadas_fit, label = 'Ajuste lineal')
+plt.legend()
+
+#Cuadro en el gráfico con los datos obtenidos:
+plt.text(2.9,-1.7, 'alpha =' + str(round(m,3)))
+plt.text(2.9,-1.9, 'ln(ka) =' + str(round(b,3)))
+plt.text(2.9,-2.1, r'$R^2$ =' + str(round(r2_squared,3)))
+plt.text(3.3, -3.3, 'Model = ' + '\n' + r'$ln(-dCa/dt) = ln(ka) + alpha * ln(Ca)$')
+
+
+
+
