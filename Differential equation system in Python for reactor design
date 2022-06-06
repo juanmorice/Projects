@@ -1,0 +1,140 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy as sp
+from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
+from scipy.integrate import quad
+import sympy as sy
+
+
+#Se define la función dxdv (se le asigna este nombre, puede ser cualquiera) que contendrá la ecuación diferencial de primer orden que se desea resolver
+
+#En el argumento de la función (v,x), primero se escribe la variable independiente y después la dependiente
+
+#En el cuerpo de la función se escriben las constantes y las ecuaciones complementarias, y al final la expresión a la que está igualado el diferencial.
+#Todo lo que está dentro de la función "def" se escribe con una sangría de espaciamiento.
+
+def dxdv(v, x):
+
+  #Constantes:
+
+  ep = -0.2
+  ca0 = 0.0327
+  Ke = 10
+  ka = 8.44
+  Fa0 = 3.27
+
+
+
+  #Ecuaciones complementarias: debe cuidar no llamar variables antes de definirlas (puede dar errores), cuide el orden en el que coloca las ecuaciones
+
+  ca = ca0 *(1-x)/(1+ep*x)
+  cb = ca0*(5/2-2*x)/(1+ep*x)
+  cd = 2*ca0*x/(1+ep*x)
+
+  ra = -(ka * (pow(ca,1/2) * cb - (cd/Ke)))
+
+
+
+  #Ecuación diferencial:
+
+  return -2*ra/(Fa0)
+
+   
+
+  #se escribe return con el fin de que al ejecutar la función se devuelva el resultado de la ecuación
+
+#Una vez definida la función se debe llamarla para poder ser ejecutada
+#Todo lo que está fuera de la función se escribe ahora sin sangría.
+
+
+#Intervalo en el que se va a evaluar la variable independiente "v", volumen:
+#Volumen: 0 L corresponde al límite inferior, 10 L corresponde al límite superior y 100 corresponde a la cantidad de iteraciones que se desea hacer
+
+v = np.linspace(0, 60, 100)
+
+#Intervalo en el que se va a evaluar la variable dependiente "x", conversión, de 0 a 1:
+
+x = [0, 0.75]
+
+#Llamada de la función:
+#El resultado de la ecuación se va a guardar en la variable llamada sol_m1
+#Parámetros: dxdv (nombre que se le puso a la ecuación al definirla), intervalo de x, intervalo de v, y el parámetro tfirst siempre es True).
+
+sol_m1 = odeint(dxdv, x, v, tfirst = True )
+
+
+#Graficación:
+
+plt.plot(v, sol_m1[:,0]) #aquí se está graficando v en el eje X y en el eje Y solo la primera columna de la solución
+#La sol_m1 devuelve una matriz de n filas y dos columnas, (x, x'). A nosotros nos importa solo el valor de x, por eso se escribe sol_m1[:,0]
+#Si quiere observar la matriz de resultados de sol_m1, solo escriba y corra "sol_m1"
+#Se obtiene que la X tiende a 0.4565
+
+plt.ylabel('$Conversión, X$', fontsize=14) #nombres a los ejes
+plt.xlabel('$Volumen (L)$', fontsize=14)
+plt.show()
+
+
+plt.fill_between (v, sol_m1[:,0], where = [(x > 0) and (x<10) for x in v], color = 'green', alpha = 0.3)
+plt.axhline (color = 'black')
+s = sy.integrate(sol_m1[:,0], (v, 0, 10))
+
+x = sy.Symbol('x')
+sy.integrate(sol_m1[:,0], (x, 0,10))
+
+
+
+#Se crea una variable S (puede ser cualquiera) que será un vector que contendrá las dos ecuaciones diferenciales a resolver (y'1 y y'2)
+#La variable S se pone en función de la variable que será la variable independiente que tienen en común ambas ecuaciones
+#x será la conversión (variable dependiente) y y la presión (la otra variable dependiente)
+#Se definen primero todas las constantes y las ecuaciones complementarias si las hubieran (recuerde todo lo que está dentro de def debe ir espaciado)
+#En return se escriben ambas ecuaciones separadas de una coma 
+
+def dSdw(w, S):
+
+    x, y = S
+
+    k = 0.0266
+    
+    Fa0 = 1.08
+
+    a = 0.0166
+
+    ep = -0.15
+
+    return [(k/Fa0)*((1-x)/(1+ep*x))*y,
+           -(a*(1+ep*x)/(2*y))]
+
+
+#Se definen valores iniciales para x y y, y se crea un vector que incluye estos dos valores: 
+
+x0 = 0
+y0 = 1 #La condición inicial de y (P/P0) es 1, en el caso donde no hay cambio de presión
+S0 = [x0, y0]
+
+#Se define el intervalo de valores de w. Se elige 60 lb de masa de catalizador como límite superior por las condiciones del problema.
+#Se puede asumir un valor de W e irlo cambiando hasta cumplir con algún parámetro deseado.
+#Se usan 100 iteraciones, esto puede cambiar según se desee
+
+w = np.linspace(0, 60, 100)
+
+#Solución: se agrega el nombre de la función, después valores iniciales de S, después intervalo de W, y el parámetro tfirst=True
+
+sol = odeint(dSdw, S0, w, tfirst=True)
+
+#El resultado de Sol será una matriz de todas las iteraciones de esta forma (dx/dw, dy/dw), donde el primer valor es el de la conversión y el segundo de la presión.
+#Para ver resultados de Sol debe correr el comando "sol"
+
+#Graficación:
+
+
+plt.plot(w, sol[:,0], label = 'Conversión, X')
+plt.plot(w, sol[:,1], label = 'Presión, y')
+plt.ylabel('$Conversión(X) /Presión (y)$', fontsize=14) #nombres a los ejes
+plt.xlabel('$Masa de catalizador W (lb)$', fontsize=14)
+plt.legend()
+plt.show()
+
+#La solución para X alcanzada, y permitida y W necesitada corresponde a donde covergen (intersección) ambas ecuaciones diferenciales en la gráfica.
+
