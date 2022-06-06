@@ -1,0 +1,113 @@
+import numpy as np
+
+list = []
+mean = []
+var = []
+std = []
+max = []
+min = []
+sum = []
+results = {'Mean':[], 'Variance': [], 'Standard deviation': [], 'Max': [], 'Min':[], 'Sum':[]}
+
+
+#Inputs from the user
+
+N = int(input('Input the size of the list you want to try'))
+
+for i in range(N):
+
+  digit = int(input('Input the digits of the list you want to try'))
+
+  list.append(digit)
+
+
+a = np.array(list) #Convert list into a np.array
+
+try:
+
+  b = a.reshape((3,3)) #Reshape a array into 3x3 numpy array
+
+  if len(list) < 9:
+
+    #Columns
+
+    for i in range(3):
+
+        mean.append(b[:,i].mean())
+        var.append(b[:, i].var())
+        std.append(b[:,i].std())
+        max.append(b[:,i].max())
+        min.append(b[:,i].min())
+        sum.append(b[:,i].sum())
+
+
+    results['Mean'].append(mean)
+    results['Variance'].append(var)
+    results['Standard deviation'].append(std)
+    results['Max'].append(max)
+    results['Min'].append(min)
+    results['Sum'].append(sum)
+
+    if len(mean) == 3:
+
+      mean = []
+      var = []
+      std = []
+      max = []
+      min = []
+      sum = []
+
+    #Rows
+
+    for i in range(3):
+
+        mean.append(b[i,:].mean())
+        var.append(b[i,:].var())
+        std.append(b[i,:].std())
+        max.append(b[i,:].max())
+        min.append(b[i,:].min())
+        sum.append(b[i,:].sum())  
+
+    results['Mean'].append(mean)
+    results['Variance'].append(var)
+    results['Standard deviation'].append(std)
+    results['Max'].append(max)
+    results['Min'].append(min)
+    results['Sum'].append(sum)
+
+    if len(mean) == 3:
+
+      mean = []
+      var = []
+      std = []
+      max = []
+      min = []
+      sum = []
+
+
+    #Global
+
+    for i in range(1):
+
+        mean.append(b[:,:].mean())
+        var.append(b[:,:].var())
+        std.append(b[:,:].std())
+        max.append(b[:,:].max())
+        min.append(b[:,:].min())
+        sum.append(b[:,:].sum())  
+
+
+    results['Mean'].append(mean)
+    results['Variance'].append(var)
+    results['Standard deviation'].append(std)
+    results['Max'].append(max)
+    results['Min'].append(min)
+    results['Sum'].append(sum)
+
+
+    print(results)
+
+
+except ValueError:
+
+  print("List must contain nine numbers." )
