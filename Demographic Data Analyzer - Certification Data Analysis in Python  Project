@@ -1,0 +1,65 @@
+import pandas as pd
+import io
+import requests
+
+url = 'https://github.com/juanmorice/juanmorice/raw/main/adult.data.csv'
+
+df=pd.read_csv(url)
+
+#df=pd.read_csv('/content/adult.data.csv')
+
+
+a = df['race'].value_counts() 
+
+print('1) People of each race represented in this dataset:', '\n' , a)
+
+
+b =  round(df.loc[df['sex'] == 'Male', 'age'].mean())
+
+print('2) The average age for men is: ', b)
+
+
+c = df.loc[df['education']=='Bachelors', 'education'].value_counts()
+
+d = round((c['Bachelors']/df.shape[0])*100)
+
+print('3) Porcentage of people who has a bachelor degree: ', d, '%')
+
+
+e = df.loc[((df['education']=='Bachelors') | (df['education']=='Masters') | (df['education']=='Doctorate')) & (df['salary']=='>50K') , 'education'].value_counts()
+
+f = round(((e['Bachelors'] + e['Masters'] + e['Doctorate'])/(df.shape[0]))*100)
+
+
+print('3) percentage of people with advanced education (Bachelors, Masters, or Doctorate) make more than 50K: ', f, '%')
+
+g = df.loc[((df['education']!='Bachelors') & (df['education']!='Masters') & (df['education']!='Doctorate')) & (df['salary']=='>50K') , 'education'].value_counts()
+
+h = round(((g.sum())/(df.shape[0]))*100)
+
+print('4) percentage of people without advanced education make more than 50K:', h, '%')
+
+i = df['hours-per-week'].min()
+
+print('5) the minimum number of hours a person works per week: ', i)
+
+j = df.loc[(df['hours-per-week'] == i) & (df['salary']=='>50K'), 'hours-per-week'].sum()
+
+k = round((j/df.shape[0])*100, 4)
+
+print('6) percentage of the people who work the minimum number of hours per week have a salary of more than 50K: ', k, '%' )
+
+l = df.loc[df['salary']=='>50K', 'native-country'].value_counts()
+
+m = ((l.max())/(df.loc[df['native-country'] == 'United-States', 'native-country'].value_counts().sum()))*100
+
+print('7) country has the highest percentage of people that earn >50K and what is that percentage?: ', l.index[0], 'with ', round(m), '%' )
+
+p = df.loc[(df['salary']=='>50K') & (df['native-country']=='India'), 'occupation'].value_counts()
+
+q= p.index[0]
+
+print('8) the most popular occupation for those who earn >50K in India:', q)
+
+print(q)
+
