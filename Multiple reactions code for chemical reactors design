@@ -1,0 +1,108 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+import scipy as sp
+from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
+from scipy.integrate import quad
+import sympy as sy
+
+
+
+def dSdv(v, S):
+
+    Fa, Fb, Fc, Fd, Fe, Ff, P = S   #Variables de las cuales se van a hacer las ecuaciones diferenciales
+
+    #Ecuaciones complementarias y constantes:
+
+    Ft = Fa + Fb + Fc + Fd + Fe + Ff 
+
+    R = 8.206*(10**(-5))
+    T = 375 + 273
+
+    fv = Ft * (R*T/P)
+
+    Pa = P * (Fa/Ft)
+    Pb = P * (Fb/Ft)
+    Pc = P * (Fc/Ft)
+    Pd = P * (Fd/Ft)
+    Pe = P * (Fe/Ft)
+    Pf = P * (Ff/Ft)
+
+
+    ra1 = -2.34* Pa * Pb 
+    ra2 = -0.374 * Pa* Pb 
+    ra3 = -21.1 * Pa * (Pc**2)
+
+    ra = ra1 + ra2 + ra3
+    rb = 2*ra1 + 2*ra2
+    rc = -ra1 + 2*ra3
+    rd = -ra1
+    re = -ra2 
+    rf = -2* ra3 
+    
+    return [ra, rb, rc, rd, re, rf, -0.049*(fv**2)]
+
+
+fa0 = 100
+fb0 = 100
+fc0 = 100
+fd0 = 0
+fe0 = 0
+ff0 = 0
+p0 = 8
+
+S0 = [fa0, fb0, fc0, fd0, fe0, ff0, p0]  #Valores iniciales de todas las variables
+v = np.linspace(0, 10, 100)   #Intervalo de valores de la variable independiente
+
+sol = odeint(dSdv, S0, v, tfirst=True)   #Llamado de la función diferencial dSdv
+
+
+#Gráficas de todas las variables con respecto a V:
+
+plt.plot(v, sol[:,0], label = 'Fa')
+plt.plot(v, sol[:,1], label = 'Fb')
+plt.plot(v, sol[:,2], label = 'Fc')
+plt.plot(v, sol[:,3], label = 'Fd')
+plt.plot(v, sol[:,4], label = 'Fe')
+plt.plot(v, sol[:,5], label = 'Ff')
+plt.plot(v, sol[:,6], label = 'P')
+
+plt.ylabel('$Flujos/ P$', fontsize=14) #nombres a los ejes
+plt.xlabel('$Volumen$', fontsize=14)
+plt.legend()
+plt.show() 
+
+
+#Gráficas de Conversión con respecto a V:
+
+
+fa0 = 84.98
+Fa = sol[:,0]
+
+X = (fa0 - Fa)/fa0 #Conversión
+
+plt.plot(v, X, label = 'Conversión, X') 
+plt.ylabel('$Conversión(X)$', fontsize=14) #nombres a los ejes
+plt.xlabel('$Volumen$', fontsize=14)
+plt.legend()
+plt.show() 
+
+
+#Gráficas de Selectividad con respecto a V:
+
+Fc = sol[:,2]
+Fd = sol[:,3]
+Fe = sol[:,4]
+Ff = sol[:,5]
+
+S_g = Fc/(Fd+Fe+Ff)  #Selectividad global
+
+plt.plot(v, S_g, label = 'Selectividad global') 
+plt.ylabel('$Selectividad global S$', fontsize=14) #nombres a los ejes
+plt.xlabel('$Volumen$', fontsize=14)
+plt.legend()
+plt.show() 
+
+
+
