@@ -1,0 +1,108 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+import pandas as pd
+import seaborn as sns
+
+import datetime 
+
+url = 'https://github.com/juanmorice/juanmorice/raw/90538de7d6e81d6a879c9523320bc601444bbb7b/fcc-forum-pageviews.csv'
+
+df1 = pd.read_csv(url, index_col = [0], parse_dates = [0])
+
+# Clean the data by filtering out days when the page views were in the top 2.5% of the dataset or bottom 2.5% of the dataset
+
+total_views = df1['value'].sum()
+
+df_clean = df1[
+              
+              (df1['value'] <= df1['value'].quantile(0.975)) &
+              (df1['value'] >= df1['value'].quantile(0.025)) 
+]
+
+print('The cleaned Dataframe is: ', '\n' , df_clean)
+
+# Create a draw_line_plot function that uses Matplotlib to draw a line chart. The title should be "Daily freeCodeCamp Forum Page Views 5/2016-12/2019". The label on the x axis should be "Date" and the label on the y axis should be "Page Views".
+
+def draw_line_plot():
+
+  df = df_clean.copy()
+  plot = plt.plot(df.index, df['value'])
+  plt.xlabel('Date')
+  plt.ylabel('Page Views')
+  plt.title('Daily freeCodeCamp Forum Page Views 5/2016-12/2019')
+  plt.figure(figsize=(16, 5))
+  plt.show()
+
+  return plot 
+
+#Create a draw_bar_plot function that draws a bar chart. It should show average daily page views for each month grouped by year.
+
+def draw_bar_plot():
+
+  df = df_clean.copy()
+
+  df_date = df_clean.reset_index()
+
+  df_date['month'] = df_date['date'].dt.month
+
+  df_date['years'] = df_date['date'].dt.year
+
+  years = ((df_date['years'].value_counts()).index).sort_values(ascending = True)
+
+  months = (df_date['month'].value_counts().index).sort_values(ascending = True)
+
+
+  bar = []
+  a = []
+  value_mean = 0
+
+
+  for i in range(1, 13):
+
+    for year in years:
+      
+      value_mean = df_date.loc[(df_date['month']==i) & (df_date['years']==year), 'value'].fillna(0).mean()
+
+      a.append(value_mean)
+
+    bar.append(a)
+    a = []
+
+
+
+  df_bar = pd.DataFrame(np.array(bar).T, index = years, columns = months)
+
+  plot = df_bar.plot.bar(rot=0, figsize=(7, 6), xlabel='Years', ylabel='Average Page Views')
+
+  plt.legend(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'])
+  plt.figure(figsize=(16, 5))
+
+  return plot
+
+#Create a draw_box_plot function that uses Seaborn to draw two adjacent box plots. These box plots should show how the values are distributed within a given year or month and how it compares over time
+
+def draw_box_plot():
+
+  df = df_clean.copy()
+
+  df_date = df_clean.reset_index()
+
+  df_date['month'] = df_date['date'].dt.month_name()
+
+  df_date['years'] = df_date['date'].dt.year
+
+  month_order=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+
+  plot_1 = sns.boxplot(x="month", y='value', data=df_date)
+  plt.show()
+
+  plot_2 = sns.boxplot(x="years", y='value', data=df_date)
+  plt.show()
+
+  return plot_1, plot_2
+
+
+draw_line_plot()
+draw_bar_plot()
+draw_box_plot()
