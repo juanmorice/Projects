@@ -1,0 +1,59 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt 
+import seaborn as sns
+import scipy 
+from scipy import stats
+
+url = 'https://github.com/juanmorice/juanmorice/raw/29dfc94c5c01a23c1b4129cb1f0a6c8a938814e4/epa-sea-level.csv'
+
+df=pd.read_csv(url)
+
+df_clean = df[(df['Year'].notna()==True) & (df['CSIRO Adjusted Sea Level'].notna()==True) ]
+
+def linearfun(x,slope, intercept):
+
+  return slope * x + intercept 
+
+#Use matplotlib to create a scatter plot using the "Year" column as the x-axis and the "CSIRO Adjusted Sea Level" column as the y-axix.
+
+plt.scatter(df_clean['Year'], df_clean['CSIRO Adjusted Sea Level'])
+plt.xlabel('Year')
+plt.ylabel('Sea Level (inches)')
+plt.title('Rise in Sea Level')
+plt.show()
+
+#Use the linregress function from scipy.stats to get the slope and y-intercept of the line of best fit. Plot the line of best fit over the top of the scatter plot. Make the line go through the year 2050 to predict the sea level rise in 2050.
+
+year_increment = np.arange(1880,2060,10)
+
+
+slope, intercept, r, p, se = stats.linregress(df_clean['Year'], df_clean['CSIRO Adjusted Sea Level'])
+
+
+data_fit = linearfun(year_increment, slope, intercept)
+
+plt.scatter(df_clean['Year'], df_clean['CSIRO Adjusted Sea Level'], label = 'Data', )
+plt.plot(year_increment, data_fit,  'r-',label = 'Prediction')
+plt.xlabel('Year')
+plt.ylabel('Sea Level (inches)')
+plt.title('Rise in Sea Level prediction in 2050')
+plt.legend()
+plt.show()
+
+# Plot a new line of best fit just using the data from year 2000 through the most recent year in the dataset.
+
+year_increment = np.arange(2000,2060,10)
+
+slope, intercept, r, p, se = stats.linregress(df_clean.loc[df['Year'] >= 2000, 'Year' ], df_clean.loc[df['Year']>= 2000, 'CSIRO Adjusted Sea Level'])
+
+data_fit = linearfun(year_increment, slope, intercept)
+
+plt.scatter(df_clean.loc[df['Year'] >= 2000, 'Year' ], df_clean.loc[df['Year']>= 2000, 'CSIRO Adjusted Sea Level'], label = 'Data', )
+plt.plot(year_increment, data_fit,  'r-',label = 'Prediction')
+plt.xlabel('Year')
+plt.ylabel('Sea Level (inches)')
+plt.title('Rise in Sea Level prediction from 2000 to 2050')
+plt.legend()
+plt.show()
+
