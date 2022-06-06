@@ -1,0 +1,247 @@
+from locale import D_FMT
+import numpy as np 
+import matplotlib.pyplot as plt 
+import pandas as pd
+from shapely.geometry import LineString 
+
+data = pd.read_excel('Metanol-agua.xlsx') #Ingresar datos de equilibrio en excel
+
+# Funciones:
+
+def intersection(x1_array, y1_array, x2_array, y2_array):
+    line1 = LineString([i for i in zip(x1_array, y1_array)])
+    line2 = LineString([i for i in zip(x2_array, y2_array)])
+    x_inter = line1.intersection(line2).x
+    y_inter = line1.intersection(line2).y
+    return x_inter, y_inter
+
+#Extracción de los datos del DataFrame:
+
+data.columns = ['x', 'y']
+
+#data = data.drop(0) #para borrar los valores NaN de la primera fila
+
+data
+
+x_ref = np.round_(np.arange(0,1.1,0.1), decimals = 1)
+
+
+# 1) DATOS GENERALES DEL PROBLEMA: (INGRESAR DATOS)
+
+#q= 1
+#xd = 0.95
+#xw = 0.05
+#zf = 0.5
+#R_factor = 1.5
+#R = 3
+
+x = data['x']
+y = data['y']
+
+q = float(input('Ingrese el valor de la calidad:')) #Calidad
+xd = float(input('Ingrese el valor de la composición de destilado:')) #Composición del destilado
+xw = float(input('Ingrese el valor de la composición de fondos:')) #Composición de los fondos
+zf = float(input('Ingrese el valor de la alimentación:')) #Composición de alimentación
+R_factor = float(input('Ingrese el valor del factor de R')) # R = R_factor * Rmin, si no lo da el problema hay que suponerlo hasta que itere una solución con sentido
+#R = float(input('Ingrese el valor de la relación de reflujo de R'))
+
+
+ #2) MÉTODO PARA CÁLCULO DE RMIN Y GRÁFICAS:
+
+#Cálculo de la intersección entre la línea de alimentación y la curva de equilibrio.
+
+if q < 1:
+
+  y_alim = ((q)/(q-1)) * x_ref + (1/(1-q)) * zf
+
+  x_inter_alim_eq, y_inter_alim_eq = intersection (x, y, x_ref, y_alim)
+
+else:
+
+  y_alim = np.interp(zf, x, y)
+
+  x_inter_alim_eq, y_inter_alim_eq = zf, y_alim
+
+
+#Cálculo de la pendiente mínima y de Rmin:
+
+if q < 1: 
+  
+  pend_min = (xd - y_inter_alim_eq) / (xd - x_inter_alim_eq)
+
+  Rmin = (pend_min)/(1-pend_min)
+
+  R = R_factor * Rmin
+
+else:
+
+  pend_min = (xd - y_alim) / (xd - zf)
+
+  Rmin = (pend_min)/(1-pend_min)
+
+  R = R_factor * Rmin
+
+#Gráficas Rmin:
+
+plt.plot(x_ref, x_ref)
+plt.plot(x,y, label = 'Equilibrio')
+
+if q < 1:
+  plt.plot([zf,0],[zf,((1/(1-q)) * zf)], label = 'Línea operación alimentación')
+else:
+  plt.plot([zf, zf], [zf, np.interp(zf, x, y)] , label = 'Línea operación alimentación')
+
+
+plt.plot([0, x_inter_alim_eq, xd], [(xd)/(Rmin+1), y_inter_alim_eq, xd], label = 'Rectificación_min')
+plt.plot([xw,xw], [0, xw], '--')
+plt.plot([xd,xd], [0, xd], '--')
+plt.plot([zf,zf], [0, zf], '--')
+plt.title('Método de cálculo Rmin')
+plt.legend(fontsize=7)
+plt.xlim (0,1)
+plt.ylim (0,1)
+plt.grid(b=True, which='major',linestyle=':',alpha=0.6)
+plt.grid(b=True, which='minor',linestyle=':',alpha=0.3)
+
+#Etiquetas de Inputs y Outputs
+
+textstr1 = '\n'.join((
+    r'$Input:$',
+    r'$q=%.2f$' % (q, ),
+    r'$x_F=%.2f$' % (zf, ),
+    r'$x_D=%.2f$' % (xd, ),
+    r'$x_B=%.2f$' % (xw, )))
+textstr2 = '\n'.join((
+    r'$Output:$',
+    r'$R_{min}=%.2f$' % (Rmin, ),
+    r'$R=%.2f$' % (R, )#,
+    #r'$Stages=%.0f$' % (s_rows-1, ),
+    #r'$Feed \:Stage=%.0f$' % (s_f, )
+    ))
+
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+plt.text(1.05, 0.25, textstr1, fontsize=8, verticalalignment='bottom', bbox=props)
+plt.text(1.05, 0.0, textstr2, fontsize=8, verticalalignment='bottom', bbox=props)
+
+plt.minorticks_on()
+
+plt.show()
+
+
+
+# 3) MÉTODO MCCABE THIELE:
+
+#Cálculo de la línea de la zona de rectificación:
+
+
+y_rect = (R/(R+1))* x_ref + (xd/(R+1))
+
+
+#Cálculo de la intersección entre la línea de alimentación y la línea de rectificación.
+
+if q < 1:
+
+  x_inter_alim_rect, y_inter_alim_rect = intersection (x_ref, y_alim, x_ref, y_rect)
+
+else:
+
+  x_inter_alim_rect, y_inter_alim_rect = zf, np.interp(zf, x_ref, y_rect)
+
+
+# Gráficas McCabe Thiele:
+
+plt.plot(x_ref, x_ref)
+plt.plot(x,y, label = 'Línea de equilibrio')
+
+if q < 1:
+  plt.plot([zf,0],[zf,((1/(1-q)) * zf)], label = 'Línea operación alimentación')
+else:
+  plt.plot([zf, zf], [zf, np.interp(zf, x, y)] , label = 'Línea operación alimentación')
+
+
+plt.plot([xd, x_inter_alim_rect], [xd, y_inter_alim_rect], '--', label = 'Línea de rectificación')
+plt.plot([xw, x_inter_alim_rect], [xw, y_inter_alim_rect], '--', label = 'Línea de agotamiento')
+plt.plot([xw,xw], [0, xw], '--')
+plt.plot([xd,xd], [0, xd], '--')
+plt.plot([zf,zf], [0, zf], '--')
+plt.title('Método McCabe-Thiele')
+plt.legend(fontsize = 6.5)
+plt.xlim (0,1)
+plt.ylim (0,1)
+plt.minorticks_on()
+
+
+# Graficación de las etapas:
+
+stages = 0
+start_point_x = xd
+start_point_y = xd
+feed_stage = []
+
+for i in range(1, 50):  
+
+  if start_point_x > x_inter_alim_eq:
+
+    step_x = np.interp(start_point_y, y, x)
+
+    plt.plot([start_point_x, step_x], [start_point_y, start_point_y], 'b-') #Horizontal
+
+    if step_x > x_inter_alim_eq:
+      step_y = (R/(R+1))* step_x + (xd/(R+1))
+      plt.plot([step_x, step_x], [start_point_y, step_y], 'b-') #Vertical
+
+    else:
+      step_y = ((y_inter_alim_rect - xw)/(x_inter_alim_eq - xw)) * step_x + (xw - ((y_inter_alim_rect - xw)/(x_inter_alim_eq - xw)) * xw)
+      plt.plot([step_x, step_x], [start_point_y, step_y], 'b-') #Vertical    
+
+    start_point_x = step_x
+    start_point_y = step_y
+
+
+  if start_point_x < x_inter_alim_eq:
+
+    feed_stage.append(i)
+
+    if start_point_x > xw:
+
+      step_x = np.interp(start_point_y, y, x)
+      step_y = ((y_inter_alim_rect - xw)/(x_inter_alim_eq - xw)) * step_x + (xw - ((y_inter_alim_rect - xw)/(x_inter_alim_eq - xw)) * xw)
+
+      plt.plot([start_point_x, step_x], [start_point_y, start_point_y], 'b-') #Horizontal
+      plt.plot([step_x, step_x], [start_point_y, step_y], 'b-') #Vertical
+
+      start_point_x = step_x
+      start_point_y = step_y
+    
+    else:
+
+      break
+  
+  stages = i
+
+
+  
+#Etiquetas de Inputs y Outputs
+
+textstr1 = '\n'.join((
+    r'$Input:$',
+    r'$q=%.2f$' % (q, ),
+    r'$x_F=%.2f$' % (zf, ),
+    r'$x_D=%.2f$' % (xd, ),
+    r'$x_B=%.2f$' % (xw, )))
+textstr2 = '\n'.join((
+    r'$Output:$', 
+    #r'$R_{min}=%.2f$' % (Rmin, ),
+    r'$R=%.2f$' % (R, ) ,
+    r'$Stages=%.0f$' % (stages-1, ),
+    r'$Feed \:Stage=%.0f$' % (feed_stage[0]+1, )
+    ))
+
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+plt.text(1.05, 0.35, textstr1, fontsize=8, verticalalignment='bottom', bbox=props)
+plt.text(1.05, 0.0, textstr2, fontsize=8, verticalalignment='bottom', bbox=props)
+
+plt.show()
+
+
+
